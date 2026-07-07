@@ -8,7 +8,6 @@ const verifyToken = require("../middlewares/auth.middlewares");
 router.post("/signup", async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
 
-  // Backend validations
   if (!firstName || !lastName) {
     res
       .status(400)
@@ -18,17 +17,14 @@ router.post("/signup", async (req, res, next) => {
 
   const nameRegex = /^[\p{L}]+(?:[ '-][\p{L}]+)*$/u;
   if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-    res
-      .status(400)
-      .json({ message: "First name and last name are incorrect." });
+    res.status(400).json({ message: "First name or last name are incorrect." });
     return;
   }
 
-  // Regex validations
   const emailRegex =
     /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ message: "Email incorrect. Please try again." });
+    res.status(400).json({ message: "Email is incorrect." });
     return;
   }
 
@@ -36,20 +32,18 @@ router.post("/signup", async (req, res, next) => {
   if (!passwordRegex.test(password)) {
     res.status(400).json({
       message:
-        "Password incorrect. Must be at least 8 characters long, must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number.",
+        "Password is incorrect. Must be at least 8 characters long, must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number.",
     });
     return;
   }
 
   try {
-    // check in the db if email is unique
     const foundUser = await User.findOne({ email });
     if (foundUser) {
-      res.status(400).json({ message: "Email already exists. Please login. " });
+      res.status(400).json({ message: "Email already exists. Please login." });
       return;
     }
 
-    // Hash the password with bcrypt.js
     const hashPassword = await bcrypt.hash(password, 12);
 
     const newUser = {
@@ -68,14 +62,12 @@ router.post("/signup", async (req, res, next) => {
 
 // POST /api/auth/login
 router.post("/login", async (req, res, next) => {
-  // res.send("/auth/login all good here");
   const { email, password } = req.body;
 
-  // Backend/Regex validations
   const emailRegex =
     /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ message: "Email incorrect. Please try again." });
+    res.status(400).json({ message: "Email is incorrect." });
     return;
   }
 
@@ -89,18 +81,15 @@ router.post("/login", async (req, res, next) => {
   }
 
   try {
-    // check in the db if email exists
     const foundUser = await User.findOne({ email });
     if (!foundUser) {
-      res
-        .status(400)
-        .json({ message: "Email does not exists. Please signup. " });
+      res.status(400).json({ message: "Email does not exists." });
       return;
     }
 
     const checkPassword = await bcrypt.compare(password, foundUser.password);
     if (!checkPassword) {
-      res.status(400).json({ message: "Password invalid. Please try again. " });
+      res.status(400).json({ message: "Password is invalid." });
       return;
     }
 
@@ -121,17 +110,7 @@ router.post("/login", async (req, res, next) => {
 
 // GET /api/auth/verify
 router.get("/verify", verifyToken, async (req, res, next) => {
-  try {
-    const response = await User.findById(req.payload._id);
-    if (!response) {
-      res.status(400).json({ message: "User not found." });
-      return;
-    }
-    const name = response.firstName + " " + response.lastName;
-    res.status(200).json({ ...req.payload, name });
-  } catch (error) {
-    next(error);
-  }
+  res.status(200).json(req.payload);
 });
 
 module.exports = router;

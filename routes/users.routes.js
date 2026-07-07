@@ -6,7 +6,6 @@ const bcrypt = require("bcryptjs");
 
 // GET /api/users/:userId
 router.get("/:userId", verifyToken, async (req, res, next) => {
-  // Check if the id in the payload match with the id in the request params
   if (req.payload._id !== req.params.userId) {
     res.status(401).json({ message: "Unauthorized access." });
     return;
