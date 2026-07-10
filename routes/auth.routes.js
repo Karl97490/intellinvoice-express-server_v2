@@ -9,9 +9,7 @@ router.post("/signup", async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
 
   if (!firstName || !lastName) {
-    res
-      .status(400)
-      .json({ message: "First name and last name are required. " });
+    res.status(400).json({ message: "First name and last name are required." });
     return;
   }
 
@@ -83,13 +81,17 @@ router.post("/login", async (req, res, next) => {
   try {
     const foundUser = await User.findOne({ email });
     if (!foundUser) {
-      res.status(400).json({ message: "Email does not exists." });
+      res
+        .status(400)
+        .json({ message: "Email does not exists. Please signup." });
       return;
     }
 
     const checkPassword = await bcrypt.compare(password, foundUser.password);
     if (!checkPassword) {
-      res.status(400).json({ message: "Password is invalid." });
+      res
+        .status(400)
+        .json({ message: "Password does not match email. Please try again." });
       return;
     }
 
