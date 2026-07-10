@@ -12,13 +12,10 @@ const invoiceSchema = new Schema(
     },
     invoiceNumber: {
       type: String,
-      required: [true, "InvoiceNumber is required."],
-      unique: [true, "invoiceNumber is unique."],
+      required: [true, "invoiceNumber is required."],
       min: 1,
     },
     owner: {
-      // firstName: { type: String, required: true, trim: true },
-      // lastName: { type: String, required: true, trim: true },
       name: { type: String, required: true, trim: true },
       email: {
         type: String,
@@ -38,6 +35,7 @@ const invoiceSchema = new Schema(
       address: { type: String, required: true, trim: true },
       phone: { type: String, trim: true },
     },
+    // allows to have no items to invoice when created but if one trigger the validation schema for title
     items: [
       {
         itemId: { type: Schema.Types.ObjectId, ref: "Item" },
@@ -51,7 +49,7 @@ const invoiceSchema = new Schema(
           default: 0,
           min: 0,
         },
-        tax: {
+        taxRate: {
           type: Number,
           default: 0,
           min: 0,
@@ -69,18 +67,18 @@ const invoiceSchema = new Schema(
     },
     issuedDate: {
       type: Date,
-      default: new Date(),
+      default: Date.now,
     },
     dueDate: {
       type: Date,
-      default: new Date(),
+      default: Date.now,
     },
     subTotal: {
       type: Number,
       default: 0,
       min: 0,
     },
-    tax: {
+    taxRate: {
       type: Number,
       default: 0,
       min: 0,
@@ -103,6 +101,9 @@ const invoiceSchema = new Schema(
     timestamps: true,
   },
 );
+
+// allows to have invoice number unique per user/company
+invoiceSchema.index({ ownerId: 1, invoiceNumber: 1 }, { unique: true });
 
 const Invoice = model("Invoice", invoiceSchema);
 
