@@ -118,19 +118,8 @@ router.get("/:invoiceId", verifyToken, async (req, res, next) => {
 
 // POST /api/invoices/
 router.post("/", verifyToken, async (req, res, next) => {
-  const {
-    owner,
-    client,
-    items,
-    status,
-    issuedDate,
-    dueDate,
-    taxRate,
-    taxAmount,
-    subTotal,
-    total,
-    notes,
-  } = req.body;
+  const { owner, client, items, status, issuedDate, dueDate, taxRate, notes } =
+    req.body;
 
   if (!owner || !client) {
     res
@@ -155,6 +144,16 @@ router.post("/", verifyToken, async (req, res, next) => {
       .json({ message: "Invoice must contain at least one item." });
     return;
   }
+
+  // subTotal,
+  const subTotal = items.reduce((subTotal, item) => {
+    return subTotal + item.quantity * item.unitPrice;
+  }, 0);
+  // taxAmount
+  const taxAmount = subTotal * (taxRate / 100);
+  // total
+  const total = subTotal + taxAmount;
+  console.log(subTotal, taxAmount, total);
 
   try {
     // Generate invoice number with the atomic nextInvoiceNumber counter from User model
@@ -267,7 +266,7 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
       notes,
     };
     if (Object.values(updatedInvoice).includes(undefined)) {
-      res.status(400).json({ message: "Incorrect request." });
+      res.status(400).json({ message: "Invalid request payload." });
       return;
     }
 
@@ -292,7 +291,7 @@ router.patch("/status/:invoiceId", verifyToken, async (req, res, next) => {
   const { status } = req.body;
 
   if (!status) {
-    res.status(400).json({ message: "Incorrect request." });
+    res.status(400).json({ message: "Invalid request payload." });
     return;
   }
 
