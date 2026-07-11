@@ -20,7 +20,7 @@ router.get("/:clientId", verifyToken, async (req, res, next) => {
       ownerId: req.payload._id,
     });
     if (!response) {
-      res.status(400).json({ message: "Client not found. " });
+      res.status(400).json({ message: "Client not found." });
       return;
     }
     res.status(200).json(response);
@@ -31,7 +31,7 @@ router.get("/:clientId", verifyToken, async (req, res, next) => {
 
 // POST /api/clients/
 router.post("/", verifyToken, async (req, res, next) => {
-  const { name, email, phone, address } = req.body;
+  const { name, email, address, phone } = req.body;
 
   if (!name || !address) {
     res.status(400).json({ message: "Name and address are required." });
@@ -52,9 +52,8 @@ router.post("/", verifyToken, async (req, res, next) => {
   }
 
   const validatePhone = phone?.replace(/\D/g, "");
-  console.log(validatePhone);
   if (validatePhone?.length < 7 || (validatePhone?.length > 15 && phone)) {
-    res.status(400).json({ message: "Phone number is incorrect. " });
+    res.status(400).json({ message: "Phone number is incorrect." });
     return;
   }
 
@@ -63,8 +62,8 @@ router.post("/", verifyToken, async (req, res, next) => {
       ownerId: req.payload._id,
       name,
       email,
-      phone,
       address,
+      phone,
     };
     await Client.create(newClient);
 
@@ -76,7 +75,7 @@ router.post("/", verifyToken, async (req, res, next) => {
 
 // PUT /api/clients/:clientId
 router.put("/:clientId", verifyToken, async (req, res, next) => {
-  const { name, email, phone, address } = req.body;
+  const { name, email, address, phone } = req.body;
 
   if (!name || !address) {
     res.status(400).json({ message: "Name and address are required." });
@@ -110,7 +109,7 @@ router.put("/:clientId", verifyToken, async (req, res, next) => {
       address,
     };
     if (Object.values(updatedClient).includes(undefined)) {
-      res.status(400).json({ message: "Incorrect request." });
+      res.status(400).json({ message: "Invalid request payload." });
       return;
     }
 

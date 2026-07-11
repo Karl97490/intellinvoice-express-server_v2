@@ -16,13 +16,13 @@ const clientSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    phone: {
-      type: String,
-      trim: true,
-    },
     address: {
       type: String,
       required: [true, "address is required."],
+      trim: true,
+    },
+    phone: {
+      type: String,
       trim: true,
     },
   },
