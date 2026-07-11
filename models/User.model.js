@@ -23,6 +23,13 @@ const userSchema = new Schema(
       type: String,
       required: [true, "password is required."],
     },
+    invoices: {
+      nextInvoiceNumber: {
+        type: Number,
+        default: 1,
+        min: 1,
+      },
+    },
     company: {
       name: { type: String, trim: true },
       email: {

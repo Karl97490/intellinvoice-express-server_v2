@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Invoice = require("../models/Invoice.model");
+const User = require("../models/User.model");
 const verifyToken = require("../middlewares/auth.middlewares");
 const mongoose = require("mongoose");
 
@@ -106,7 +107,7 @@ router.get("/:invoiceId", verifyToken, async (req, res, next) => {
       ownerId: req.payload._id,
     });
     if (!response) {
-      res.status(400).json({ message: "Invoice not found. " });
+      res.status(400).json({ message: "Invoice not found." });
       return;
     }
     res.status(200).json(response);
@@ -118,7 +119,6 @@ router.get("/:invoiceId", verifyToken, async (req, res, next) => {
 // POST /api/invoices/
 router.post("/", verifyToken, async (req, res, next) => {
   const {
-    invoiceNumber,
     owner,
     client,
     items,
@@ -131,11 +131,6 @@ router.post("/", verifyToken, async (req, res, next) => {
     total,
     notes,
   } = req.body;
-
-  if (!invoiceNumber) {
-    res.status(400).json({ message: "Invoice number is required." });
-    return;
-  }
 
   if (!owner || !client) {
     res
@@ -162,11 +157,19 @@ router.post("/", verifyToken, async (req, res, next) => {
   }
 
   try {
-    const foundInvoice = await Invoice.findOne({ invoiceNumber });
-    if (foundInvoice) {
-      res.status(400).json({ message: "Invoice number must be unique." });
-      return;
-    }
+    // Generate invoice number with the atomic nextInvoiceNumber counter from User model
+    const user = await User.findByIdAndUpdate(
+      req.payload._id,
+      {
+        $inc: {
+          "invoices.nextInvoiceNumber": 1, // increment by 1 the nextInvoiceNumber counter
+        },
+      },
+      { returnDocument: false }, // Get the number before incrementing
+    );
+    const { nextInvoiceNumber } = user.invoices;
+    const invoiceNumber = `INV-${String(nextInvoiceNumber).padStart(3, "0")}`;
+    console.log(invoiceNumber);
 
     const newInvoice = {
       ownerId: req.payload._id,

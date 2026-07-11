@@ -39,7 +39,6 @@ const invoiceSchema = new Schema(
     items: {
       type: [
         {
-          itemId: { type: Schema.Types.ObjectId, ref: "Item" },
           title: {
             type: String,
             required: true,
@@ -70,6 +69,7 @@ const invoiceSchema = new Schema(
     status: {
       type: String,
       enum: ["paid", "unpaid", "overdue", "pending"],
+      default: "pending",
     },
     issuedDate: {
       type: Date,
