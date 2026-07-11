@@ -3,6 +3,8 @@ const Invoice = require("../models/Invoice.model");
 const User = require("../models/User.model");
 const verifyToken = require("../middlewares/auth.middlewares");
 const mongoose = require("mongoose");
+const calculateInvoiceTotals = require("../utils/calculateInvoiceTotals");
+const generateInvoiceNumber = require("../utils/generateInvoiceNumber");
 
 // GET /api/invoices/
 router.get("/", verifyToken, async (req, res, next) => {
@@ -145,29 +147,12 @@ router.post("/", verifyToken, async (req, res, next) => {
     return;
   }
 
-  // subTotal,
-  const subTotal = items.reduce((subTotal, item) => {
-    return subTotal + item.quantity * item.unitPrice;
-  }, 0);
-  // taxAmount
-  const taxAmount = subTotal * (taxRate / 100);
-  // total
-  const total = subTotal + taxAmount;
-  console.log(subTotal, taxAmount, total);
+  // Calculate sub total, tax amount and total of the invoice
+  const { subTotal, taxAmount, total } = calculateInvoiceTotals(items, taxRate);
 
   try {
-    // Generate invoice number with the atomic nextInvoiceNumber counter from User model
-    const user = await User.findByIdAndUpdate(
-      req.payload._id,
-      {
-        $inc: {
-          "invoices.nextInvoiceNumber": 1, // increment by 1 the nextInvoiceNumber counter
-        },
-      },
-      { returnDocument: false }, // Get the number before incrementing
-    );
-    const { nextInvoiceNumber } = user.invoices;
-    const invoiceNumber = `INV-${String(nextInvoiceNumber).padStart(3, "0")}`;
+    // Generate a new invoice number
+    const invoiceNumber = await generateInvoiceNumber(User, req.payload._id);
     console.log(invoiceNumber);
 
     const newInvoice = {
