@@ -125,9 +125,9 @@ router.post("/", verifyToken, async (req, res, next) => {
     status,
     issuedDate,
     dueDate,
-    subTotal,
-    tax,
+    taxRate,
     taxAmount,
+    subTotal,
     total,
     notes,
   } = req.body;
@@ -137,15 +137,10 @@ router.post("/", verifyToken, async (req, res, next) => {
     return;
   }
 
-  if (invoiceNumber < 1 || typeof invoiceNumber !== "string") {
-    res.status(400).json({ message: "Invoice number is incorrect." });
-    return;
-  }
-
   if (!owner || !client) {
     res
       .status(400)
-      .json({ message: "Owner and Client informations are required. " });
+      .json({ message: "Owner and client informations are required." });
     return;
   }
 
@@ -169,7 +164,7 @@ router.post("/", verifyToken, async (req, res, next) => {
   try {
     const foundInvoice = await Invoice.findOne({ invoiceNumber });
     if (foundInvoice) {
-      res.status(400).json({ message: "Invoice number must be unique. " });
+      res.status(400).json({ message: "Invoice number must be unique." });
       return;
     }
 
@@ -192,17 +187,15 @@ router.post("/", verifyToken, async (req, res, next) => {
       status,
       issuedDate,
       dueDate,
-      subTotal,
-      tax,
+      taxRate,
       taxAmount,
+      subTotal,
       total,
       notes,
     };
-    const response = await Invoice.create(newInvoice);
+    await Invoice.create(newInvoice);
 
-    res
-      .status(201)
-      .json({ message: "invoice created.", invoiceId: response.id });
+    res.status(201).json({ message: "invoice created." });
   } catch (error) {
     next(error);
   }
@@ -216,18 +209,17 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
     items,
     issuedDate,
     dueDate,
-    subTotal,
-    tax,
+    taxRate,
     taxAmount,
+    subTotal,
     total,
     notes,
   } = req.body;
 
-  console.log(req.body);
   if (!owner || !client) {
     res
       .status(400)
-      .json({ message: "Owner and Client informations are required. " });
+      .json({ message: "Owner and client informations are required." });
     return;
   }
 
@@ -265,9 +257,9 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
       items,
       issuedDate,
       dueDate,
-      subTotal,
-      tax,
+      taxRate,
       taxAmount,
+      subTotal,
       total,
       notes,
     };
@@ -295,7 +287,7 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
 // PATCH /api/invoices/status/:invoiceId
 router.patch("/status/:invoiceId", verifyToken, async (req, res, next) => {
   const { status } = req.body;
-  console.log(status);
+
   if (!status) {
     res.status(400).json({ message: "Incorrect request." });
     return;

@@ -13,7 +13,8 @@ const invoiceSchema = new Schema(
     invoiceNumber: {
       type: String,
       required: [true, "invoiceNumber is required."],
-      min: 1,
+      trim: true,
+      uppercase: true,
     },
     owner: {
       name: { type: String, required: true, trim: true },
@@ -35,32 +36,37 @@ const invoiceSchema = new Schema(
       address: { type: String, required: true, trim: true },
       phone: { type: String, trim: true },
     },
-    // allows to have no items to invoice when created but if one trigger the validation schema for title
-    items: [
-      {
-        itemId: { type: Schema.Types.ObjectId, ref: "Item" },
-        title: {
-          type: String,
-          required: true,
-          trim: true,
+    items: {
+      type: [
+        {
+          itemId: { type: Schema.Types.ObjectId, ref: "Item" },
+          title: {
+            type: String,
+            required: true,
+            trim: true,
+          },
+          quantity: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
+          taxRate: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
+          unitPrice: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
         },
-        quantity: {
-          type: Number,
-          default: 0,
-          min: 0,
-        },
-        taxRate: {
-          type: Number,
-          default: 0,
-          min: 0,
-        },
-        unitPrice: {
-          type: Number,
-          default: 0,
-          min: 0,
-        },
+      ],
+      validate: {
+        validator: (items) => items.length > 0,
+        message: "Invoice must contain at least one item.",
       },
-    ],
+    },
     status: {
       type: String,
       enum: ["paid", "unpaid", "overdue", "pending"],
@@ -73,17 +79,17 @@ const invoiceSchema = new Schema(
       type: Date,
       default: Date.now,
     },
-    subTotal: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
     taxRate: {
       type: Number,
       default: 0,
       min: 0,
     },
     taxAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    subTotal: {
       type: Number,
       default: 0,
       min: 0,
