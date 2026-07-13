@@ -4,8 +4,15 @@ const verifyToken = require("../middlewares/auth.middlewares");
 
 // GET /api/clients/
 router.get("/", verifyToken, async (req, res, next) => {
+  const filter = { ownerId: req.payload._id };
+  const { search } = req.query;
+  console.log(search);
+  if (search) {
+    filter.$or = [{ name: { $regex: search, $options: "i" } }];
+  }
+  console.log(filter);
   try {
-    const response = await Client.find({ ownerId: req.payload._id });
+    const response = await Client.find(filter);
     res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -52,7 +59,7 @@ router.post("/", verifyToken, async (req, res, next) => {
   }
 
   const validatePhone = phone?.replace(/\D/g, "");
-  if (validatePhone?.length < 7 || (validatePhone?.length > 15 && phone)) {
+  if ((validatePhone?.length < 7 || validatePhone?.length > 15) && phone) {
     res.status(400).json({ message: "Phone number is incorrect." });
     return;
   }
@@ -97,7 +104,7 @@ router.put("/:clientId", verifyToken, async (req, res, next) => {
 
   const validatePhone = phone?.replace(/\D/g, "");
   if ((validatePhone?.length < 7 || validatePhone?.length > 15) && phone) {
-    res.status(400).json({ message: "Phone number is incorrect. " });
+    res.status(400).json({ message: "Phone number is incorrect." });
     return;
   }
 

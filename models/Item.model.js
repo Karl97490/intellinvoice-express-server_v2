@@ -15,17 +15,12 @@ const itemSchema = new Schema({
     default: 0,
     min: 0,
   },
-  tax: {
+  taxRate: {
     type: Number,
     default: 0,
     min: 0,
   },
   unitPrice: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-  total: {
     type: Number,
     default: 0,
     min: 0,
