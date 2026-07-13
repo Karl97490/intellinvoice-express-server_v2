@@ -147,6 +147,11 @@ router.post("/", verifyToken, async (req, res, next) => {
     return;
   }
 
+  if (items.some((item) => !item.title.trim())) {
+    res.status(400).json({ message: "Each item must have a title." });
+    return;
+  }
+
   // Calculate sub total, tax amount and total of the invoice
   const { subTotal, taxAmount, total } = calculateInvoiceTotals(items, taxRate);
 

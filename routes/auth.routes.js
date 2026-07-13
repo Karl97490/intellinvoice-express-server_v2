@@ -112,7 +112,17 @@ router.post("/login", async (req, res, next) => {
 
 // GET /api/auth/verify
 router.get("/verify", verifyToken, async (req, res, next) => {
-  res.status(200).json(req.payload);
+  try {
+    const response = await User.findById(req.payload._id).select("-password");
+    if (!response) {
+      res.status(400).json({ message: "User not found." });
+      return;
+    }
+    console.log(response);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
 });
 
 module.exports = router;
