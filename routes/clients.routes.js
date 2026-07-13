@@ -8,7 +8,11 @@ router.get("/", verifyToken, async (req, res, next) => {
   const { search } = req.query;
   console.log(search);
   if (search) {
-    filter.$or = [{ name: { $regex: search, $options: "i" } }];
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+      { phone: { $regex: search, $options: "i" } },
+    ];
   }
   console.log(filter);
   try {
