@@ -8,49 +8,83 @@ const generateInvoiceNumber = require("../utils/generateInvoiceNumber");
 
 // GET /api/invoices/
 router.get("/", verifyToken, async (req, res, next) => {
-  console.log(req.query);
-
-  const page = Number(req.query.page);
-  const limit = Number(req.query.limit);
-  console.log(page, limit);
-  const { search, issuedDate, dueDate, status } = req.query;
-  const activeStatuses = Object.keys(status || {}).filter(
-    (key) => status[key] === "true",
-  );
-  // console.log(activeStatuses);
   const filter = { ownerId: req.payload._id };
+  const { search, issuedDate, dueDate, status } = req.query;
+  const limit = Number(req.query.limit);
+  const sort = req.query.sort;
+  if (sort) {
+    sort.createdAt = Number(sort.createdAt);
+  }
+  console.log(sort);
 
   if (search) {
     filter.$or = [
       { "client.name": { $regex: search, $options: "i" } },
-      { invoiceNumber: { $regex: search } },
+      { invoiceNumber: { $regex: search, $options: "i" } },
     ];
   }
 
   if (issuedDate) {
-    filter.issuedDate = { $gte: new Date(issuedDate) };
+    const startDate = new Date(issuedDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 1);
+    filter.issuedDate = { $gte: startDate, $lt: endDate };
   }
-
   if (dueDate) {
-    filter.dueDate = { $lte: new Date(dueDate) };
+    const startDate = new Date(dueDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 1);
+    filter.dueDate = { $gte: startDate, $lt: endDate };
   }
 
-  if (activeStatuses.length > 0) {
-    filter.status = { $in: activeStatuses };
+  if (status) {
+    filter.status = { $in: status };
   }
-
   console.log(filter);
+  // const page = Number(req.query.page);
+  // const limit = Number(req.query.limit);
+  // console.log(page, limit);
+  // const { search, issuedDate, dueDate, status } = req.query;
+  // const activeStatuses = Object.keys(status || {}).filter(
+  //   (key) => status[key] === "true",
+  // );
+  // // console.log(activeStatuses);
+  // const filter = { ownerId: req.payload._id };
+
+  // if (search) {
+  //   filter.$or = [
+  //     { "client.name": { $regex: search, $options: "i" } },
+  //     { invoiceNumber: { $regex: search } },
+  //   ];
+  // }
+
+  // if (issuedDate) {
+  //   filter.issuedDate = { $gte: new Date(issuedDate) };
+  // }
+
+  // if (dueDate) {
+  //   filter.dueDate = { $lte: new Date(dueDate) };
+  // }
+
+  // if (activeStatuses.length > 0) {
+  //   filter.status = { $in: activeStatuses };
+  // }
+
+  // console.log(filter);
   try {
-    const response = await Invoice.find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const response = await Invoice.find(filter).limit(limit).sort(sort);
+
+    res.status(200).json(response);
+    // .skip((page - 1) * limit)
+    // .limit(limit);
     // if (!response.length) {
     //   const response = await Invoice.find({ ownerId: req.payload._id });
     //   res.status(200).json(response);
     //   return;
     // }
-    console.log(response);
-    res.status(200).json(response);
+    // console.log(response);
   } catch (error) {
     next(error);
   }
@@ -59,9 +93,6 @@ router.get("/", verifyToken, async (req, res, next) => {
 // GET /api/invoices/stats
 router.get("/stats", verifyToken, async (req, res, next) => {
   try {
-    const totalInvoices = await Invoice.countDocuments({
-      ownerId: req.payload._id,
-    });
     const stats = await Invoice.aggregate([
       {
         $match: { ownerId: new mongoose.Types.ObjectId(req.payload._id) },
@@ -69,14 +100,27 @@ router.get("/stats", verifyToken, async (req, res, next) => {
       {
         $group: {
           _id: null,
+          totalInvoices: {
+            $sum: 1,
+          },
+          totalPending: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+            },
+          },
+          totalOverdue: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "overdue"] }, 1, 0],
+            },
+          },
           totalPaid: {
             $sum: {
-              $cond: [{ $eq: ["$status", "paid"] }, "$total", 0],
+              $cond: [{ $eq: ["$status", "paid"] }, 1, 0],
             },
           },
           totalUnpaid: {
             $sum: {
-              $cond: [{ $eq: ["$status", "unpaid"] }, "$total", 0],
+              $cond: [{ $eq: ["$status", "unpaid"] }, 1, 0],
             },
           },
           totalAmount: { $sum: "$total" },
@@ -87,15 +131,16 @@ router.get("/stats", verifyToken, async (req, res, next) => {
     const result =
       stats.length > 0
         ? stats[0]
-        : { totalPaid: 0, totalUnpaid: 0, totalAmount: 0 };
+        : {
+            totalInvoices: 0,
+            totalPending: 0,
+            totalOverdue: 0,
+            totalPaid: 0,
+            totalUnpaid: 0,
+            totalAmount: 0,
+          };
 
-    console.log(result, totalInvoices);
-    res.status(200).json({
-      totalInvoices,
-      totalPaid: result.totalPaid,
-      totalUnpaid: result.totalUnpaid,
-      totalAmount: result.totalAmount,
-    });
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
@@ -185,9 +230,9 @@ router.post("/", verifyToken, async (req, res, next) => {
       total,
       notes,
     };
-    await Invoice.create(newInvoice);
+    const response = await Invoice.create(newInvoice);
 
-    res.status(201).json({ message: "invoice created." });
+    res.status(201).json({ message: "invoice created.", _id: response._id });
   } catch (error) {
     next(error);
   }
@@ -195,18 +240,8 @@ router.post("/", verifyToken, async (req, res, next) => {
 
 // PATCH /api/invoices/:invoiceId
 router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
-  const {
-    owner,
-    client,
-    items,
-    issuedDate,
-    dueDate,
-    taxRate,
-    taxAmount,
-    subTotal,
-    total,
-    notes,
-  } = req.body;
+  const { owner, client, items, status, issuedDate, dueDate, taxRate, notes } =
+    req.body;
 
   if (!owner || !client) {
     res
@@ -232,6 +267,14 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
     return;
   }
 
+  if (items.some((item) => !item.title.trim())) {
+    res.status(400).json({ message: "Each item must have a title." });
+    return;
+  }
+
+  // Calculate sub total, tax amount and total of the invoice
+  const { subTotal, taxAmount, total } = calculateInvoiceTotals(items, taxRate);
+
   try {
     const updatedInvoice = {
       owner: {
@@ -247,6 +290,7 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
         phone: client.phone,
       },
       items,
+      status,
       issuedDate,
       dueDate,
       taxRate,
@@ -279,6 +323,7 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
 // PATCH /api/invoices/status/:invoiceId
 router.patch("/status/:invoiceId", verifyToken, async (req, res, next) => {
   const { status } = req.body;
+  console.log(status);
 
   if (!status) {
     res.status(400).json({ message: "Invalid request payload." });

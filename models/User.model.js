@@ -37,11 +37,11 @@ const userSchema = new Schema(
         lowercase: true,
         trim: true,
       },
-      phone: { type: String, trim: true },
       address: {
         type: String,
         trim: true,
       },
+      phone: { type: String, trim: true },
     },
   },
   {

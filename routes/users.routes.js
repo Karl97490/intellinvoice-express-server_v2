@@ -5,23 +5,23 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 // GET /api/users/:userId
-router.get("/:userId", verifyToken, async (req, res, next) => {
-  if (req.payload._id !== req.params.userId) {
-    res.status(401).json({ message: "Unauthorized access." });
-    return;
-  }
+// router.get("/:userId", verifyToken, async (req, res, next) => {
+//   if (req.payload._id !== req.params.userId) {
+//     res.status(401).json({ message: "Unauthorized access." });
+//     return;
+//   }
 
-  try {
-    const response = await User.findById(req.params.userId);
-    if (!response) {
-      res.status(400).json({ message: "User not found." });
-      return;
-    }
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-});
+//   try {
+//     const response = await User.findById(req.params.userId);
+//     if (!response) {
+//       res.status(400).json({ message: "User not found." });
+//       return;
+//     }
+//     res.status(200).json(response);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // PATCH /api/users/:userId
 router.patch("/:userId", verifyToken, async (req, res, next) => {
@@ -44,29 +44,29 @@ router.patch("/:userId", verifyToken, async (req, res, next) => {
     return;
   }
 
-  if (!company) {
-    res.status(400).json({ message: "Company informations missing." });
-    return;
-  }
+  // if (!company) {
+  //   res.status(400).json({ message: "Company informations missing." });
+  //   return;
+  // }
 
-  if (!company.name) {
-    res.status(400).json({ message: "Company name is required." });
-    return;
-  }
+  // if (!company.name && company) {
+  //   res.status(400).json({ message: "Company name is required." });
+  //   return;
+  // }
 
   const emailRegex =
     /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/g;
-  if (!emailRegex.test(company.email)) {
+  if (!emailRegex.test(company?.email) && company?.email) {
     res.status(400).json({ message: "Email is incorrect." });
     return;
   }
 
   const validatePhone = company?.phone?.replace(/\D/g, "");
   if (
-    validatePhone?.length < 7 ||
-    (validatePhone?.length > 15 && company?.phone)
+    (validatePhone?.length < 7 || validatePhone?.length > 15) &&
+    company?.phone
   ) {
-    res.status(400).json({ message: "Company phone number is incorrect. " });
+    res.status(400).json({ message: "Company phone number is incorrect." });
     return;
   }
 
@@ -82,50 +82,8 @@ router.patch("/:userId", verifyToken, async (req, res, next) => {
       },
     };
     const response = await User.findByIdAndUpdate(
-      req.params.userId,
+      req.payload._id,
       updatedUser,
-      { returnDocument: true, runValidators: true },
-    );
-    if (!response) {
-      res.status(400).json({ message: "User not found." });
-      return;
-    }
-
-    res.status(200).json(response);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// PATCH /api/users/password/:userId
-router.patch("/password/:userId", verifyToken, async (req, res, next) => {
-  // Check if the id in the payload match with the id in the request params
-  if (req.payload._id !== req.params.userId) {
-    res.status(401).json({ message: "Unauthorized access." });
-    return;
-  }
-
-  const { password } = req.body;
-  if (!password) {
-    res.status(400).json({ message: "Password is required." });
-    return;
-  }
-
-  const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/g;
-  if (!passwordRegex.test(password)) {
-    res.status(400).json({
-      message:
-        "Password incorrect. Must be at least 8 characters long, must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number.",
-    });
-    return;
-  }
-
-  try {
-    const hashPassword = await bcrypt.hash(password, 12);
-
-    const response = await User.findByIdAndUpdate(
-      req.params.userId,
-      { password: hashPassword },
       { returnDocument: true, runValidators: true },
     );
     if (!response) {
@@ -146,7 +104,7 @@ router.delete("/:userId", verifyToken, async (req, res, next) => {
     return;
   }
   try {
-    const response = await User.findByIdAndDelete(req.params.userId);
+    const response = await User.findByIdAndDelete(req.payload._id);
     if (!response) {
       res.status(400).json({ message: "User not found." });
       return;
@@ -156,6 +114,48 @@ router.delete("/:userId", verifyToken, async (req, res, next) => {
     next(error);
   }
 });
+
+// PATCH /api/users/password/:userId
+// router.patch("/password/:userId", verifyToken, async (req, res, next) => {
+//   // Check if the id in the payload match with the id in the request params
+//   if (req.payload._id !== req.params.userId) {
+//     res.status(401).json({ message: "Unauthorized access." });
+//     return;
+//   }
+
+//   const { password } = req.body;
+//   if (!password) {
+//     res.status(400).json({ message: "Password is required." });
+//     return;
+//   }
+
+//   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/g;
+//   if (!passwordRegex.test(password)) {
+//     res.status(400).json({
+//       message:
+//         "Password incorrect. Must be at least 8 characters long, must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number.",
+//     });
+//     return;
+//   }
+
+//   try {
+//     const hashPassword = await bcrypt.hash(password, 12);
+
+//     const response = await User.findByIdAndUpdate(
+//       req.params.userId,
+//       { password: hashPassword },
+//       { returnDocument: true, runValidators: true },
+//     );
+//     if (!response) {
+//       res.status(400).json({ message: "User not found." });
+//       return;
+//     }
+
+//     res.status(200).json(response);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 // PATCH /api/users/email/:userId
 // router.patch("/email/:userId", verifyToken, async (req, res, next) => {

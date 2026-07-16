@@ -118,7 +118,6 @@ router.get("/verify", verifyToken, async (req, res, next) => {
       res.status(400).json({ message: "User not found." });
       return;
     }
-    console.log(response);
     res.status(200).json(response);
   } catch (error) {
     next(error);
