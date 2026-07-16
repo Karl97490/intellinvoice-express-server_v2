@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const Client = require("../models/Client.model");
 const verifyToken = require("../middlewares/auth.middlewares");
+const mongoose = require("mongoose");
 
 // GET /api/clients/
 router.get("/", verifyToken, async (req, res, next) => {
@@ -18,6 +19,37 @@ router.get("/", verifyToken, async (req, res, next) => {
   try {
     const response = await Client.find(filter);
     res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+//GET /api/clients/stats
+router.get("/stats", verifyToken, async (req, res, next) => {
+  try {
+    const stats = await Client.aggregate([
+      {
+        $match: { ownerId: new mongoose.Types.ObjectId(req.payload._id) },
+      },
+      {
+        $group: {
+          _id: null,
+          totalClients: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const result =
+      stats.length > 0
+        ? stats[0]
+        : {
+            totalClients: 0,
+          };
+
+    console.log(result);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
