@@ -15,7 +15,6 @@ router.get("/", verifyToken, async (req, res, next) => {
   if (sort) {
     sort.createdAt = Number(sort.createdAt);
   }
-  console.log(sort);
 
   if (search) {
     filter.$or = [
@@ -42,49 +41,11 @@ router.get("/", verifyToken, async (req, res, next) => {
   if (status) {
     filter.status = { $in: status };
   }
-  console.log(filter);
-  // const page = Number(req.query.page);
-  // const limit = Number(req.query.limit);
-  // console.log(page, limit);
-  // const { search, issuedDate, dueDate, status } = req.query;
-  // const activeStatuses = Object.keys(status || {}).filter(
-  //   (key) => status[key] === "true",
-  // );
-  // // console.log(activeStatuses);
-  // const filter = { ownerId: req.payload._id };
 
-  // if (search) {
-  //   filter.$or = [
-  //     { "client.name": { $regex: search, $options: "i" } },
-  //     { invoiceNumber: { $regex: search } },
-  //   ];
-  // }
-
-  // if (issuedDate) {
-  //   filter.issuedDate = { $gte: new Date(issuedDate) };
-  // }
-
-  // if (dueDate) {
-  //   filter.dueDate = { $lte: new Date(dueDate) };
-  // }
-
-  // if (activeStatuses.length > 0) {
-  //   filter.status = { $in: activeStatuses };
-  // }
-
-  // console.log(filter);
   try {
     const response = await Invoice.find(filter).limit(limit).sort(sort);
 
     res.status(200).json(response);
-    // .skip((page - 1) * limit)
-    // .limit(limit);
-    // if (!response.length) {
-    //   const response = await Invoice.find({ ownerId: req.payload._id });
-    //   res.status(200).json(response);
-    //   return;
-    // }
-    // console.log(response);
   } catch (error) {
     next(error);
   }
@@ -203,7 +164,6 @@ router.post("/", verifyToken, async (req, res, next) => {
   try {
     // Generate a new invoice number
     const invoiceNumber = await generateInvoiceNumber(User, req.payload._id);
-    console.log(invoiceNumber);
 
     const newInvoice = {
       ownerId: req.payload._id,
@@ -323,7 +283,6 @@ router.patch("/:invoiceId", verifyToken, async (req, res, next) => {
 // PATCH /api/invoices/status/:invoiceId
 router.patch("/status/:invoiceId", verifyToken, async (req, res, next) => {
   const { status } = req.body;
-  console.log(status);
 
   if (!status) {
     res.status(400).json({ message: "Invalid request payload." });

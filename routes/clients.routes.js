@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 router.get("/", verifyToken, async (req, res, next) => {
   const filter = { ownerId: req.payload._id };
   const { search } = req.query;
-  console.log(search);
+
   if (search) {
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
@@ -15,7 +15,7 @@ router.get("/", verifyToken, async (req, res, next) => {
       { phone: { $regex: search, $options: "i" } },
     ];
   }
-  console.log(filter);
+
   try {
     const response = await Client.find(filter);
     res.status(200).json(response);
@@ -48,7 +48,6 @@ router.get("/stats", verifyToken, async (req, res, next) => {
             totalClients: 0,
           };
 
-    console.log(result);
     res.status(200).json(result);
   } catch (error) {
     next(error);
