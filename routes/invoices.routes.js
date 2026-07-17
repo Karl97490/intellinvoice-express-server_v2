@@ -69,9 +69,19 @@ router.get("/stats", verifyToken, async (req, res, next) => {
               $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
             },
           },
+          totalAmountPending: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "pending"] }, "$total", 0],
+            },
+          },
           totalOverdue: {
             $sum: {
               $cond: [{ $eq: ["$status", "overdue"] }, 1, 0],
+            },
+          },
+          totalAmountOverdue: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "overdue"] }, "$total", 0],
             },
           },
           totalPaid: {
@@ -79,9 +89,19 @@ router.get("/stats", verifyToken, async (req, res, next) => {
               $cond: [{ $eq: ["$status", "paid"] }, 1, 0],
             },
           },
+          totalAmountPaid: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "paid"] }, "$total", 0],
+            },
+          },
           totalUnpaid: {
             $sum: {
               $cond: [{ $eq: ["$status", "unpaid"] }, 1, 0],
+            },
+          },
+          totalAmountUnpaid: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "unpaid"] }, "$total", 0],
             },
           },
           totalAmount: { $sum: "$total" },
@@ -95,9 +115,13 @@ router.get("/stats", verifyToken, async (req, res, next) => {
         : {
             totalInvoices: 0,
             totalPending: 0,
+            totalAmountPending: 0,
             totalOverdue: 0,
+            totalAmountOverdue: 0,
             totalPaid: 0,
+            totalAmountPaid: 0,
             totalUnpaid: 0,
+            totalAmountUnpaid: 0,
             totalAmount: 0,
           };
 
